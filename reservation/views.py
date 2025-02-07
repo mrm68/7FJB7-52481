@@ -40,7 +40,7 @@ class Reservation_List(generics.ListCreateAPIView):
             )
 
         cost = seats_reserved * COST_PER_SEAT
-        serializer.save(user=self.request.user, seats_reserved=seats_reserved)
+        serializer.save(user=self.request.user, seats_reserved=seats_reserved, cost=cost)
 
 
 class Reservation_Detail(generics.RetrieveDestroyAPIView):
