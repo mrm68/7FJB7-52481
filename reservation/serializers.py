@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Reservation
-class resrvationSerializer(serializers.ModelSerializer):
+class Reservation_Serializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     class Meta:
         fields = (

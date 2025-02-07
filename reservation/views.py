@@ -1,16 +1,16 @@
-from rest_framework import generics
-from .models import Reservation
-from .serializers import resrvationSerializer
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from .models import Reservation
+from .serializers import Reservation_Serializer
 
 COST_PER_SEAT = 100
-
+MAX_RESERVATIONS = 10
+MIN_SEATS = 4
+MAX_SEATS = 10
 
 class Reservation_List(generics.ListCreateAPIView):
-    # queryset = Reservation.objects.all()
-    permission_classes = (permissions.IsAuthenticated,)
-    serializer_class = resrvationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = Reservation_Serializer
 
     def get_queryset(self):
         if self.request.user.is_staff:
@@ -18,34 +18,31 @@ class Reservation_List(generics.ListCreateAPIView):
         return Reservation.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        seats_reserved = serializer.validated_data.get("seats_reserved")
+        seats_reserved = self.validate_seats(serializer.validated_data.get("seats_reserved"))
+        if seats_reserved is None:
+            return Response({"detail": f"The number of seats reserved must be between {MIN_SEATS} and {MAX_SEATS}."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Check the total number of active reservations
-        active_reservations_count = Reservation.objects.count()
-        if active_reservations_count >= 10:
-            return Response(
-                {
-                    "detail": "Maximum number of active reservations reached. You cannot have more than 10 active reservations."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        if self.check_max_reservations():
+            return Response({"detail": f"Maximum number of active reservations reached. You cannot have more than {MAX_RESERVATIONS} active reservations."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Ensure seats reserved are no fewer than 4 and no more than 10
-        if seats_reserved < 4:
-            seats_reserved = 4
-        elif seats_reserved > 10:
-            return Response(
-                {"detail": "The number of seats reserved cannot exceed 10."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        cost = seats_reserved * COST_PER_SEAT
+        cost = (seats_reserved-1) * COST_PER_SEAT
         serializer.save(user=self.request.user, seats_reserved=seats_reserved, cost=cost)
 
+    def validate_seats(self, seats_reserved):
+        if seats_reserved < MIN_SEATS:
+            return MIN_SEATS
+        if seats_reserved > MAX_SEATS:
+            return None
+        if seats_reserved % 2 != 0:
+            return seats_reserved+1
+        return seats_reserved
+
+    def check_max_reservations(self):
+        return Reservation.objects.count() >= MAX_RESERVATIONS
 
 class Reservation_Detail(generics.RetrieveDestroyAPIView):
-    serializer_class = resrvationSerializer
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = Reservation_Serializer
 
     def get_queryset(self):
         return Reservation.objects.filter(user=self.request.user)
@@ -53,9 +50,6 @@ class Reservation_Detail(generics.RetrieveDestroyAPIView):
     def delete(self, request, *args, **kwargs):
         instance = self.get_object()
         if instance.user != request.user:
-            return Response(
-                {"error": "You do not have permission to delete this reservation."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
+            return Response({"error": "You do not have permission to delete this reservation."}, status=status.HTTP_403_FORBIDDEN)
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
