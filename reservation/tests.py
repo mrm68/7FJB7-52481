@@ -46,6 +46,7 @@ class ReservationDetailTests(TestCase):
     # FORBIDDEN OTHER
     def test_retrieve_other_user_reservation_detail(self):
         """Test retrieving another user's reservation detail, should be not found or forbidden"""
+        # did I really have to force authenticate ?
         self.client.force_authenticate(user=self.user)
         response = self.client.get(f'/api/reservations/{self.other_reservation.id}/')
         self.assertIn(response.status_code, [status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND])
