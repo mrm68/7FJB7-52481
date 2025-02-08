@@ -1,0 +1,121 @@
+________________________________________________________________
+________________________________________________________________
+OpenApi's
+
+http://localhost:8000/api/documentation/redoc/
+Access the Redoc documentation for a user-friendly view of the OpenAPI specifications.
+
+http://localhost:8000/api/documentation/swagger/
+Access the Swagger UI documentation to explore and interact with the OpenAPI specifications.
+
+http://localhost:8000/api/schema/
+Retrieve the raw OpenAPI schema in JSON format.
+
+
+________________________________________________________________
+________________________________________________________________
+CURL’s
+
+GET
+List Reservations: 
+curl -u "reza:1" -X GET http://localhost:8000/api/reservations/
+This command allows both administrators and users to list reservations. Administrators will see all active reservations, while users will only see the active reservations they have made.
+
+GET
+Retrieve Reservation Detail
+curl -u "taha:1" -X GET http://localhost:8000/api/reservations/1/
+This command retrieves the details of a specific reservation. The requester must be either the owner of the reservation or an administrator.
+
+POST
+Create Reservation
+curl -u "taha:1" -X POST -H "Content-Type: application/json" -d '{"seats_reserved": 5}' http://127.0.0.1:8000/api/reservations/
+Authorized users can use this command to create a new reservation.
+
+DELETE
+Delete Reservation
+curl -u "taha:1" -X DELETE http://127.0.0.1:8000/api/reservations/8/
+This command allows the deletion of a reservation. The requester must be either the owner of the reservation or an administrator.
+
+
+________________________________________________________________
+________________________________________________________________
+Tests
+
+Retrieving Own Reservation Detail
+    Test Name: test_retrieve_own_reservation_detail
+    Description: This test ensures that an authenticated user can retrieve the details of their own reservation.
+    Expected Outcome: The user should receive a 200 OK status with the reservation details.
+
+Retrieving Another User's Reservation Detail
+    Test Name: test_retrieve_other_user_reservation_detail
+    Description: This test checks that a user cannot retrieve the details of another user's reservation.
+    Expected Outcome: The request should return a 403 Forbidden or 404 Not Found status.
+
+Deleting Own Reservation
+    Test Name: test_delete_own_reservation
+    Description: This test verifies that an authenticated user can delete their own reservation.
+    Expected Outcome: The user should receive a 204 No Content status, and the reservation should be removed from the database.
+
+Deleting Another User's Reservation
+    Test Name: test_delete_other_user_reservation
+    Description: This test ensures that a user cannot delete another user's reservation.
+    Expected Outcome: The request should return a 403 Forbidden or 404 Not Found status.
+
+Unauthenticated User Cannot Retrieve Reservation Detail
+    Test Name: test_unauthenticated_user_cannot_retrieve_reservation_detail
+    Description: This test checks that an unauthenticated user cannot retrieve reservation details.
+    Expected Outcome: The request should return a 401 Unauthorized status.
+
+Unauthenticated User Cannot Delete Reservation
+    Test Name: test_unauthenticated_user_cannot_delete_reservation
+    Description: This test verifies that an unauthenticated user cannot delete reservations.
+    Expected Outcome: The request should return a 401 Unauthorized status.
+
+
+________________________________________________________________
+________________________________________________________________
+View's
+This document provides an overview of the Reservation_List and Reservation_Detail views in the Django project.
+
+* Reservation_List View
+    The Reservation_List view allows authenticated users to list and create reservations. It supports both GET and POST methods.
+    URL: /api/reservations/
+    Methods: GET, POST
+    Permissions: IsAuthenticated
+    
+    GET Method
+        Description: Retrieves a list of reservations.
+        For Admin Users: Returns all reservations.
+        For Regular Users: Returns reservations made by the user.    
+        Response:
+        200 OK: Successfully retrieves the list of reservations.
+
+    POST Method
+        Description: Creates a new reservation.
+        Validation: Ensures the number of seats reserved is between MIN_SEATS (4) and MAX_SEATS (10). If the number of seats is odd, it will automatically be incremented by 1 to make it even. Ensures that the maximum number of active reservations (MAX_RESERVATIONS = 10) has not been reached.
+        Request Data:
+        seats_reserved (integer): Number of seats to reserve.
+        Response:
+        201 Created: Successfully creates a new reservation.
+        400 Bad Request: Validation error if the number of seats is out of the valid range or the maximum number of active reservations is reached.
+
+* Reservation_Detail View
+    The Reservation_Detail view allows authenticated users to retrieve and delete their own reservations. It supports both GET and DELETE methods.
+    URL: /api/reservations/<int:pk>/
+    Methods: GET, DELETE
+    Permissions: IsAuthenticated
+
+    GET Method
+        Description: Retrieves the details of a specific reservation.
+        Validation: Ensures the user is retrieving their own reservation.
+
+        Response:
+        200 OK: Successfully retrieves the reservation details.
+        403 Forbidden or 404 Not Found: If the reservation does not belong to the user.
+
+    DELETE Method
+        Description: Deletes a specific reservation.
+        Validation: Ensures the user is deleting their own reservation.
+        Response:
+        204 No Content: Successfully deletes the reservation.
+        403 Forbidden: If the reservation does not belong to the user.
