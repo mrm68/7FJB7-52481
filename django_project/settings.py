@@ -81,8 +81,12 @@ WSGI_APPLICATION = "django_project.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "restaurant_db",
+        "USER": "postgres",
+        "PASSWORD": "1",
+        "HOST": "db",
+        "PORT": "5432",
     }
 }
 
@@ -144,3 +148,4 @@ REST_FRAMEWORK = {
 
 AUTH_USER_MODEL = "accounts.CustomUser"
 AUTH_PASSWORD_VALIDATORS = []
+ALLOWED_HOSTS = ['0.0.0.0']
